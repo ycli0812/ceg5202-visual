@@ -6,7 +6,7 @@ class Plotter:
     def __init__(self, sensors=6):
         plt.ion()
         self.sensors = sensors
-        self.figure, self.axes = plt.subplots(ncols=2, nrows=int(np.ceil(sensors / 2)))
+        self.figure, self.axes = plt.subplots(ncols=2, nrows=int(np.ceil(sensors / 2)), figsize=(8, 6))
         self.axes = np.ndarray.flatten(self.axes)
         if type(self.axes) is not np.ndarray:
             self.axes = np.array([self.axes])
@@ -55,7 +55,8 @@ class Plotter:
             line.set_ydata(ydata)
 
         self.axes[sensor].set_xlim([min(xdata), max(xdata) + 1])
-        self.axes[sensor].set_ylim([min_y * (0.99 if min_y > 0 else 1.01), max_y * (1.01 if max_y > 0 else 0.99)])
+        margin = (max_y - min_y) * 0.3
+        self.axes[sensor].set_ylim([min_y - margin, max_y + margin])
 
     def extend_sensor_data(self, sensor: int, t: list[int], vals: list[list[int | float]]):
         if sensor >= self.sensors:
@@ -85,7 +86,8 @@ class Plotter:
             line.set_ydata(ydata)
 
         self.axes[sensor].set_xlim([min(xdata), max(xdata) + 1])
-        self.axes[sensor].set_ylim([min_y * (0.99 if min_y > 0 else 1.01), max_y * (1.01 if max_y > 0 else 0.99)])
+        margin = (max_y - min_y) * 0.15
+        self.axes[sensor].set_ylim([min_y - margin, max_y + margin])
 
     def refresh(self):
         self.figure.canvas.draw()

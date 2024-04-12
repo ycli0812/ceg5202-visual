@@ -26,8 +26,12 @@ import matplotlib.pyplot as plt
 #     figure.canvas.flush_events()
 #     time.sleep(0.1)
 
-raw = [[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]
-ary = np.array(raw)
-print(ary)
-after = ary.transpose()
-print(after)
+# raw = [[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]
+# ary = np.array(raw)
+# print(ary)
+# after = ary.transpose()
+# print(after)
+
+counter = {}
+print('ACC' in counter)
+print(counter)

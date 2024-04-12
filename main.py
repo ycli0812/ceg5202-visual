@@ -18,37 +18,6 @@ subplot_id_map = {
     'MLR': None,
 }
 
-temp_store = {
-    'ACC': {
-        'x': [],
-        'y': [],
-    },
-    'PRS': {
-        'x': [],
-        'y': [],
-    },
-    'GYR': {
-        'x': [],
-        'y': [],
-    },
-    'HUM': {
-        'x': [],
-        'y': [],
-    },
-    'MAG': {
-        'x': [],
-        'y': [],
-    },
-    'TMP': {
-        'x': [],
-        'y': [],
-    },
-    'MLR': {
-        'x': [],
-        'y': [],
-    },
-}
-
 
 def sanitize_text(raw: bytes):
     if raw.endswith(b'\r\n'):
@@ -60,66 +29,54 @@ def sanitize_text(raw: bytes):
 
 def push_store(name, x, y):
     plotter.push_sensor_data(subplot_id_map[name], x, y)
-    # temp_store[name]['x'].append(x)
-    # temp_store[name]['y'].append(y)
-    # if len(temp_store[name]['x']) >= 10:
-    #     plotter.extend_sensor_data(sensor, temp_store[name]['x'], temp_store[name]['y'])
-    #     temp_store[name]['x'].clear()
-    #     temp_store[name]['y'].clear()
 
 
 def parse_data(text: str):
-    try:
-        name, tick, num, *data = text.split(',')
-        data = [float(n) for n in data]
-        num = int(num)
-        tick = int(tick)
-        if num != len(data):
-            raise Exception('Data package broken')
-    except Exception as e:
-        return
+    name, tick, num, *data = text.split(',')
+    data = [float(n) for n in data]
+    num = int(num)
+    tick = int(tick)
+    if num != len(data):
+        raise Exception('Data package broken')
+
     if name == 'MLR':
-        print(f'Model predict: {motions[int(data[0])]}')
+        print(f'[{tick}] Prediction: {motions[int(data[0])]}')
     else:
         plotter.push_sensor_data(subplot_id_map[name], tick, data)
-    # match name:
-    #     case 'ACC' as name:
-    #         push_store(name, tick, data)
-    #     case 'PRS' as name:
-    #         push_store(name, tick, data)
-    #     case 'GYR' as name:
-    #         push_store(name, tick, data)
-    #     case 'HUM' as name:
-    #         push_store(name, tick, data)
-    #     case 'TMP' as name:
-    #         push_store(name, tick, data)
-    #     case 'MAG' as name:
-    #         push_store(name, tick, data)
-    #     case 'MLR':
-    #         print(f'Model predict: {motions[int(data[0])]}')
+
+    return name, tick, num, data
 
 
 def main():
-    plotter.set_subplot_info(sensor=subplot_id_map['ACC'], n_lines=3, title='Acceleration')
-    plotter.set_subplot_info(sensor=subplot_id_map['GYR'], n_lines=3, title='Gyroscope')
-    plotter.set_subplot_info(sensor=subplot_id_map['MAG'], n_lines=3, title='Magnitude')
-    plotter.set_subplot_info(sensor=subplot_id_map['HUM'], n_lines=1, title='Humidity')
-    plotter.set_subplot_info(sensor=subplot_id_map['TMP'], n_lines=1, title='Temperature')
-    plotter.set_subplot_info(sensor=subplot_id_map['PRS'], n_lines=1, title='Pressure')
-
     with serial.Serial(com, 115200, timeout=1) as ser:
+        plotter.set_subplot_info(sensor=subplot_id_map['ACC'], n_lines=3, title='Acceleration')
+        plotter.set_subplot_info(sensor=subplot_id_map['GYR'], n_lines=3, title='Gyroscope')
+        plotter.set_subplot_info(sensor=subplot_id_map['MAG'], n_lines=3, title='Magnitude')
+        plotter.set_subplot_info(sensor=subplot_id_map['HUM'], n_lines=1, title='Humidity')
+        plotter.set_subplot_info(sensor=subplot_id_map['TMP'], n_lines=1, title='Temperature')
+        plotter.set_subplot_info(sensor=subplot_id_map['PRS'], n_lines=1, title='Pressure')
+
         line_counter = 0
-        while True:
+        start_tick = None
+        data_count = {}
+        while start_tick is None or tick - start_tick <= 40 * 1000:
             line = sanitize_text(ser.readline())
-            parse_data(line)
+            try:
+                name, tick, num, data = parse_data(line)
+                if start_tick is None:
+                    start_tick = tick
+                if name not in data_count:
+                    data_count[name] = 0
+                data_count[name] += 1
+            except:
+                print('Data parse error:', line)
+
             line_counter += 1
-            if line_counter >= 28:
+            if line_counter >= 35:
                 plotter.refresh()
                 line_counter = 0
+        print(data_count)
 
 
 if __name__ == '__main__':
     main()
-
-
-
